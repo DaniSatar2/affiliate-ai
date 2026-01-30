@@ -12,34 +12,23 @@ HEADERS = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
     "Content-Type": "application/json",
     "HTTP-Referer": "http://localhost",
-    "X-Title": "AI Affiliate Link Assistant"
+    "X-Title": "AI Affiliate Idea Generator"
 }
 
-# ================= HELPER =================
-def extract_product_name(url: str) -> str:
-    try:
-        slug = url.split("/")[-1]
-        name = slug.split("-i.")[0]
-        return name.replace("-", " ").title()
-    except Exception:
-        return ""
-
-# ================= MAIN AI =================
-def generate_affiliate_ideas(product_link: str, product_name: str) -> str:
+def generate_affiliate_ideas(product_name: str) -> str:
     prompt = f"""
-Anda ialah pakar affiliate marketing TikTok & Shopee.
+Anda ialah pakar affiliate marketing TikTok.
 
-Maklumat produk:
-Nama produk: {product_name}
-Link produk: {product_link}
+Produk:
+{product_name}
 
 Sila hasilkan:
-1. Problem statement pengguna (1–2 ayat)
-2. 3 idea video TikTok (angle berbeza)
+1. Problem statement utama pengguna (1–2 ayat)
+2. 3 idea video TikTok (setiap satu angle berbeza)
 3. Hook 3 saat pertama (ayat spoken)
-4. CTA ringkas
+4. CTA ringkas yang sesuai untuk TikTok
 
-Gunakan Bahasa Melayu yang santai dan mudah difahami.
+Gunakan Bahasa Melayu yang santai, ringkas dan mudah difahami.
 """
 
     payload = {
@@ -64,11 +53,10 @@ Gunakan Bahasa Melayu yang santai dan mudah difahami.
                 data = res.json()
                 content = data["choices"][0]["message"]["content"]
 
-                # DEFENSIVE CHECK
                 if content and content.strip():
                     return content
                 else:
-                    return "⚠️ AI tidak memulangkan teks."
+                    return "⚠️ AI tidak memulangkan sebarang teks."
 
             elif res.status_code in (429, 500, 503):
                 time.sleep(2)
