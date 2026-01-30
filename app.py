@@ -1,7 +1,7 @@
 import streamlit as st
 from ai_engine import generate_affiliate_ideas
 
-# ================= PARSER =================
+# ---------- Helper: Parse AI output ----------
 def parse_ai_output(text: str):
     keys = ["PROBLEM", "IDEA 1", "IDEA 2", "IDEA 3", "HOOK", "CTA"]
     data = {}
@@ -14,49 +14,35 @@ def parse_ai_output(text: str):
             data[current] = ""
         elif current and line:
             data[current] += line + " "
+
     return data
 
-# ================= DARK MODE =================
-def set_theme(dark: bool):
-    if dark:
-        st.markdown("""
-        <style>
-        body, .stApp { background-color:#0e1117; color:#fafafa; }
-        </style>
-        """, unsafe_allow_html=True)
 
-# ================= PAGE CONFIG =================
+# ---------- Page Config ----------
 st.set_page_config(
     page_title="AI Affiliate Idea Generator",
     page_icon="🚀",
     layout="centered"
 )
 
-# ================= STATE INIT =================
+# ---------- Session State ----------
 if "history" not in st.session_state:
     st.session_state.history = []
 
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = False
-
-# ================= SIDEBAR =================
-with st.sidebar:
-    st.header("⚙️ Settings")
-    st.session_state.dark_mode = st.toggle("🌙 Dark Mode", value=st.session_state.dark_mode)
-
-set_theme(st.session_state.dark_mode)
-
-# ================= HEADER =================
+# ---------- Header ----------
 st.title("🚀 AI Affiliate Idea Generator")
-st.caption("Masukkan nama produk → dapatkan idea video TikTok siap guna")
+st.caption("Masukkan nama produk dan dapatkan idea video TikTok secara automatik")
 st.divider()
 
-# ================= INPUT =================
+# ---------- Input ----------
+st.subheader("📦 Maklumat Produk")
+
 product_name = st.text_input(
-    "📦 Nama Produk",
+    "Nama Produk",
     placeholder="Contoh: Logitech M331 Silent Mouse"
 )
 
+# ---------- Action ----------
 if st.button("🚀 Generate Idea", use_container_width=True):
     if not product_name:
         st.warning("Sila masukkan nama produk.")
@@ -70,36 +56,39 @@ if st.button("🚀 Generate Idea", use_container_width=True):
             "result": result
         })
 
-# ================= OUTPUT =================
+# ---------- Output ----------
 if "result" in st.session_state:
     data = parse_ai_output(st.session_state.result)
 
     st.success("Idea berjaya dijana!")
     st.subheader("💡 Cadangan Kandungan")
 
-    def card(title, content, color="info"):
-        st.markdown(f"### {title}")
-        getattr(st, color)(content)
-        st.button("📋 Copy", key=title, on_click=lambda: st.toast("Disalin!"))
+    # Problem
+    st.markdown("### 🧠 Problem Statement")
+    st.info(data.get("PROBLEM", "—"))
 
-    card("🧠 Problem Statement", data.get("PROBLEM", "—"))
-    
+    # Ideas
     st.markdown("### 🎬 Idea Video TikTok")
     col1, col2, col3 = st.columns(3)
+
     with col1:
         st.success(data.get("IDEA 1", "—"))
-        st.button("📋 Copy", key="idea1")
+
     with col2:
         st.success(data.get("IDEA 2", "—"))
-        st.button("📋 Copy", key="idea2")
+
     with col3:
         st.success(data.get("IDEA 3", "—"))
-        st.button("📋 Copy", key="idea3")
 
-    card("🎣 Hook (3 saat pertama)", data.get("HOOK", "—"), "warning")
-    card("👉 Call To Action", data.get("CTA", "—"), "error")
+    # Hook
+    st.markdown("### 🎣 Hook (3 saat pertama)")
+    st.warning(data.get("HOOK", "—"))
 
-    # ===== DOWNLOAD =====
+    # CTA
+    st.markdown("### 👉 Call To Action")
+    st.error(data.get("CTA", "—"))
+
+    # ---------- Download ----------
     full_script = f"""
 PROBLEM:
 {data.get("PROBLEM","")}
@@ -127,7 +116,7 @@ CTA:
         mime="text/plain"
     )
 
-# ================= HISTORY =================
+# ---------- History ----------
 if st.session_state.history:
     st.divider()
     st.subheader("📊 History Idea (Session)")

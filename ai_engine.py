@@ -47,24 +47,35 @@ Gunakan Bahasa Melayu yang santai dan natural.
 
     payload = {
         "model": "openai/gpt-4o-mini",
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
         "temperature": 0.7,
         "max_tokens": 600
     }
 
     for _ in range(3):
         try:
-            r = requests.post(API_URL, headers=HEADERS, json=payload, timeout=30)
+            r = requests.post(
+                API_URL,
+                headers=HEADERS,
+                json=payload,
+                timeout=30
+            )
+
             if r.status_code == 200:
                 content = r.json()["choices"][0]["message"]["content"]
-                if content.strip():
+                if content and content.strip():
                     return content
                 return "⚠️ AI tidak memulangkan teks."
+
             elif r.status_code in (429, 500, 503):
                 time.sleep(2)
                 continue
+
             else:
                 return f"❌ Ralat API: {r.text}"
+
         except requests.exceptions.RequestException as e:
             return f"❌ Ralat rangkaian: {str(e)}"
 
