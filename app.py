@@ -1,9 +1,9 @@
 import streamlit as st
 from ai_engine import generate_affiliate_ideas
 
-# ---------- Helper: Parse AI output ----------
+# ---------- PARSER ----------
 def parse_ai_output(text: str):
-    keys = ["PROBLEM", "IDEA 1", "IDEA 2", "IDEA 3", "HOOK", "CTA"]
+    keys = ["BRAND", "CIRI", "PROBLEM", "IDEA 1", "IDEA 2", "IDEA 3", "HOOK", "CTA"]
     data = {}
     current = None
 
@@ -18,23 +18,23 @@ def parse_ai_output(text: str):
     return data
 
 
-# ---------- Page Config ----------
+# ---------- PAGE CONFIG ----------
 st.set_page_config(
     page_title="AI Affiliate Idea Generator",
     page_icon="🚀",
     layout="centered"
 )
 
-# ---------- Session State ----------
+# ---------- SESSION STATE ----------
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# ---------- Header ----------
+# ---------- HEADER ----------
 st.title("🚀 AI Affiliate Idea Generator")
-st.caption("Masukkan nama produk dan dapatkan idea video TikTok secara automatik")
+st.caption("Masukkan nama produk → AI kenal pasti brand, ciri & idea video TikTok")
 st.divider()
 
-# ---------- Input ----------
+# ---------- INPUT ----------
 st.subheader("📦 Maklumat Produk")
 
 product_name = st.text_input(
@@ -42,7 +42,7 @@ product_name = st.text_input(
     placeholder="Contoh: Logitech M331 Silent Mouse"
 )
 
-# ---------- Action ----------
+# ---------- ACTION ----------
 if st.button("🚀 Generate Idea", use_container_width=True):
     if not product_name:
         st.warning("Sila masukkan nama produk.")
@@ -56,31 +56,37 @@ if st.button("🚀 Generate Idea", use_container_width=True):
             "result": result
         })
 
-# ---------- Output ----------
+# ---------- OUTPUT ----------
 if "result" in st.session_state:
     data = parse_ai_output(st.session_state.result)
 
     st.success("Idea berjaya dijana!")
     st.subheader("💡 Cadangan Kandungan")
 
-    # Problem
+    # BRAND
+    st.markdown("### 🏷️ Brand")
+    st.info(data.get("BRAND", "—"))
+
+    # CIRI
+    st.markdown("### ⚙️ Ciri-ciri Utama")
+    st.success(data.get("CIRI", "—"))
+
+    # PROBLEM
     st.markdown("### 🧠 Problem Statement")
     st.info(data.get("PROBLEM", "—"))
 
-    # Ideas
+    # IDEAS
     st.markdown("### 🎬 Idea Video TikTok")
     col1, col2, col3 = st.columns(3)
 
     with col1:
         st.success(data.get("IDEA 1", "—"))
-
     with col2:
         st.success(data.get("IDEA 2", "—"))
-
     with col3:
         st.success(data.get("IDEA 3", "—"))
 
-    # Hook
+    # HOOK
     st.markdown("### 🎣 Hook (3 saat pertama)")
     st.warning(data.get("HOOK", "—"))
 
@@ -88,8 +94,14 @@ if "result" in st.session_state:
     st.markdown("### 👉 Call To Action")
     st.error(data.get("CTA", "—"))
 
-    # ---------- Download ----------
+    # ---------- DOWNLOAD ----------
     full_script = f"""
+BRAND:
+{data.get("BRAND","")}
+
+CIRI:
+{data.get("CIRI","")}
+
 PROBLEM:
 {data.get("PROBLEM","")}
 
@@ -116,7 +128,7 @@ CTA:
         mime="text/plain"
     )
 
-# ---------- History ----------
+# ---------- HISTORY ----------
 if st.session_state.history:
     st.divider()
     st.subheader("📊 History Idea (Session)")

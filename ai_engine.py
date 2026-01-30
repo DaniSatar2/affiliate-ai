@@ -22,10 +22,23 @@ Anda ialah pakar affiliate marketing TikTok.
 Produk:
 {product_name}
 
+Langkah:
+1. Kenal pasti BRAND berdasarkan nama produk.
+2. Senaraikan 3–5 CIRI UTAMA produk (berdasarkan pengetahuan umum, anggaran dibenarkan).
+3. Gunakan maklumat tersebut untuk bina kandungan affiliate.
+
 Sila jawab dalam format berikut (WAJIB ikut):
 
+BRAND:
+<nama brand>
+
+CIRI:
+- <ciri 1>
+- <ciri 2>
+- <ciri 3>
+
 PROBLEM:
-<problem statement pengguna>
+<problem utama pengguna>
 
 IDEA 1:
 <idea video pertama>
@@ -47,11 +60,9 @@ Gunakan Bahasa Melayu yang santai dan natural.
 
     payload = {
         "model": "openai/gpt-4o-mini",
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
+        "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.7,
-        "max_tokens": 600
+        "max_tokens": 700
     }
 
     for _ in range(3):
