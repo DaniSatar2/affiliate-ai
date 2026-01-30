@@ -22,13 +22,27 @@ Anda ialah pakar affiliate marketing TikTok.
 Produk:
 {product_name}
 
-Sila hasilkan:
-1. Problem statement utama pengguna (1–2 ayat)
-2. 3 idea video TikTok (setiap satu angle berbeza)
-3. Hook 3 saat pertama (ayat spoken)
-4. CTA ringkas yang sesuai untuk TikTok
+Sila jawab dalam format berikut (WAJIB ikut):
 
-Gunakan Bahasa Melayu yang santai, ringkas dan mudah difahami.
+PROBLEM:
+<problem statement pengguna>
+
+IDEA 1:
+<idea video pertama>
+
+IDEA 2:
+<idea video kedua>
+
+IDEA 3:
+<idea video ketiga>
+
+HOOK:
+<hook 3 saat pertama (ayat spoken)>
+
+CTA:
+<call to action ringkas>
+
+Gunakan Bahasa Melayu yang santai dan natural.
 """
 
     payload = {
@@ -52,11 +66,9 @@ Gunakan Bahasa Melayu yang santai, ringkas dan mudah difahami.
             if res.status_code == 200:
                 data = res.json()
                 content = data["choices"][0]["message"]["content"]
-
                 if content and content.strip():
                     return content
-                else:
-                    return "⚠️ AI tidak memulangkan sebarang teks."
+                return "⚠️ AI tidak memulangkan teks."
 
             elif res.status_code in (429, 500, 503):
                 time.sleep(2)
@@ -68,4 +80,4 @@ Gunakan Bahasa Melayu yang santai, ringkas dan mudah difahami.
         except requests.exceptions.RequestException as e:
             return f"❌ Ralat rangkaian: {str(e)}"
 
-    return "⚠️ AI sedang sibuk. Sila cuba lagi sebentar."
+    return "⚠️ AI sedang sibuk. Sila cuba lagi."
