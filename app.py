@@ -17,6 +17,7 @@ def parse_ai_output(text: str):
 
     return data
 
+
 # ---------- PAGE CONFIG ----------
 st.set_page_config(
     page_title="AI Affiliate Idea Generator",
@@ -33,11 +34,19 @@ if "history" not in st.session_state:
 
 # ---------- HEADER ----------
 st.title("🚀 AI Affiliate Idea Generator")
-st.caption("Generate TikTok affiliate ideas with AI")
+st.caption("Masukkan nama produk → pilih bahasa → AI jana idea TikTok")
 st.divider()
 
-# ---------- LANGUAGE SELECT ----------
-st.subheader("🌐 Pilihan Bahasa / Language")
+# ---------- INPUT ----------
+st.subheader("📦 Maklumat Produk")
+
+product_name = st.text_input(
+    "Nama Produk",
+    placeholder="Contoh: Logitech M331 Silent Mouse"
+)
+
+# ---------- LANGUAGE SELECT (DI BAWAH INPUT) ----------
+st.markdown("### 🌐 Pilihan Bahasa")
 
 col_lang1, col_lang2 = st.columns(2)
 
@@ -49,22 +58,18 @@ with col_lang2:
     if st.button("🇬🇧 English", use_container_width=True):
         st.session_state.language = "EN"
 
-st.info(f"Bahasa dipilih: **{ 'Bahasa Melayu' if st.session_state.language == 'BM' else 'English' }**")
+st.caption(
+    f"Bahasa dipilih: **{'Bahasa Melayu' if st.session_state.language == 'BM' else 'English'}**"
+)
 
 st.divider()
-
-# ---------- INPUT ----------
-product_name = st.text_input(
-    "📦 Product Name",
-    placeholder="Example: Logitech M331 Silent Mouse"
-)
 
 # ---------- ACTION ----------
 if st.button("🚀 Generate Idea", use_container_width=True):
     if not product_name:
-        st.warning("Please enter a product name.")
+        st.warning("Sila masukkan nama produk.")
     else:
-        with st.spinner("AI is generating ideas..."):
+        with st.spinner("AI sedang jana idea..."):
             result = generate_affiliate_ideas(
                 product_name=product_name,
                 language=st.session_state.language
@@ -81,19 +86,19 @@ if st.button("🚀 Generate Idea", use_container_width=True):
 if "result" in st.session_state:
     data = parse_ai_output(st.session_state.result)
 
-    st.success("Idea generated successfully!")
-    st.subheader("💡 Content Suggestions")
+    st.success("Idea berjaya dijana!")
+    st.subheader("💡 Cadangan Kandungan")
 
     st.markdown("### 🏷️ Brand")
     st.info(data.get("BRAND", "—"))
 
-    st.markdown("### ⚙️ Features")
+    st.markdown("### ⚙️ Features / Ciri-ciri")
     st.success(data.get("FEATURES", "—"))
 
     st.markdown("### 🧠 Problem Statement")
     st.info(data.get("PROBLEM", "—"))
 
-    st.markdown("### 🎬 TikTok Video Ideas")
+    st.markdown("### 🎬 Idea Video TikTok")
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -103,7 +108,7 @@ if "result" in st.session_state:
     with col3:
         st.success(data.get("IDEA 3", "—"))
 
-    st.markdown("### 🎣 Hook")
+    st.markdown("### 🎣 Hook (3 saat pertama)")
     st.warning(data.get("HOOK", "—"))
 
     st.markdown("### 👉 Call To Action")
@@ -120,7 +125,7 @@ if "result" in st.session_state:
 # ---------- HISTORY ----------
 if st.session_state.history:
     st.divider()
-    st.subheader("📊 History (Session)")
+    st.subheader("📊 History Idea (Session)")
 
     for i, item in enumerate(st.session_state.history[:5], 1):
         with st.expander(f"{i}. {item['product']} ({item['language']})"):
