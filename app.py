@@ -3,7 +3,7 @@ from ai_engine import generate_affiliate_ideas
 
 # ---------- PARSER ----------
 def parse_ai_output(text: str):
-    keys = ["BRAND", "CIRI", "PROBLEM", "IDEA 1", "IDEA 2", "IDEA 3", "HOOK", "CTA"]
+    keys = ["BRAND", "FEATURES", "PROBLEM", "IDEA 1", "IDEA 2", "IDEA 3", "HOOK", "CTA"]
     data = {}
     current = None
 
@@ -17,7 +17,6 @@ def parse_ai_output(text: str):
 
     return data
 
-
 # ---------- PAGE CONFIG ----------
 st.set_page_config(
     page_title="AI Affiliate Idea Generator",
@@ -26,33 +25,55 @@ st.set_page_config(
 )
 
 # ---------- SESSION STATE ----------
+if "language" not in st.session_state:
+    st.session_state.language = "BM"
+
 if "history" not in st.session_state:
     st.session_state.history = []
 
 # ---------- HEADER ----------
 st.title("🚀 AI Affiliate Idea Generator")
-st.caption("Masukkan nama produk → AI kenal pasti brand, ciri & idea video TikTok")
+st.caption("Generate TikTok affiliate ideas with AI")
+st.divider()
+
+# ---------- LANGUAGE SELECT ----------
+st.subheader("🌐 Pilihan Bahasa / Language")
+
+col_lang1, col_lang2 = st.columns(2)
+
+with col_lang1:
+    if st.button("🇲🇾 Bahasa Melayu", use_container_width=True):
+        st.session_state.language = "BM"
+
+with col_lang2:
+    if st.button("🇬🇧 English", use_container_width=True):
+        st.session_state.language = "EN"
+
+st.info(f"Bahasa dipilih: **{ 'Bahasa Melayu' if st.session_state.language == 'BM' else 'English' }**")
+
 st.divider()
 
 # ---------- INPUT ----------
-st.subheader("📦 Maklumat Produk")
-
 product_name = st.text_input(
-    "Nama Produk",
-    placeholder="Contoh: Logitech M331 Silent Mouse"
+    "📦 Product Name",
+    placeholder="Example: Logitech M331 Silent Mouse"
 )
 
 # ---------- ACTION ----------
 if st.button("🚀 Generate Idea", use_container_width=True):
     if not product_name:
-        st.warning("Sila masukkan nama produk.")
+        st.warning("Please enter a product name.")
     else:
-        with st.spinner("AI sedang jana idea..."):
-            result = generate_affiliate_ideas(product_name)
+        with st.spinner("AI is generating ideas..."):
+            result = generate_affiliate_ideas(
+                product_name=product_name,
+                language=st.session_state.language
+            )
 
         st.session_state.result = result
         st.session_state.history.insert(0, {
             "product": product_name,
+            "language": st.session_state.language,
             "result": result
         })
 
@@ -60,23 +81,19 @@ if st.button("🚀 Generate Idea", use_container_width=True):
 if "result" in st.session_state:
     data = parse_ai_output(st.session_state.result)
 
-    st.success("Idea berjaya dijana!")
-    st.subheader("💡 Cadangan Kandungan")
+    st.success("Idea generated successfully!")
+    st.subheader("💡 Content Suggestions")
 
-    # BRAND
     st.markdown("### 🏷️ Brand")
     st.info(data.get("BRAND", "—"))
 
-    # CIRI
-    st.markdown("### ⚙️ Ciri-ciri Utama")
-    st.success(data.get("CIRI", "—"))
+    st.markdown("### ⚙️ Features")
+    st.success(data.get("FEATURES", "—"))
 
-    # PROBLEM
     st.markdown("### 🧠 Problem Statement")
     st.info(data.get("PROBLEM", "—"))
 
-    # IDEAS
-    st.markdown("### 🎬 Idea Video TikTok")
+    st.markdown("### 🎬 TikTok Video Ideas")
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -86,53 +103,25 @@ if "result" in st.session_state:
     with col3:
         st.success(data.get("IDEA 3", "—"))
 
-    # HOOK
-    st.markdown("### 🎣 Hook (3 saat pertama)")
+    st.markdown("### 🎣 Hook")
     st.warning(data.get("HOOK", "—"))
 
-    # CTA
     st.markdown("### 👉 Call To Action")
     st.error(data.get("CTA", "—"))
 
     # ---------- DOWNLOAD ----------
-    full_script = f"""
-BRAND:
-{data.get("BRAND","")}
-
-CIRI:
-{data.get("CIRI","")}
-
-PROBLEM:
-{data.get("PROBLEM","")}
-
-IDEA 1:
-{data.get("IDEA 1","")}
-
-IDEA 2:
-{data.get("IDEA 2","")}
-
-IDEA 3:
-{data.get("IDEA 3","")}
-
-HOOK:
-{data.get("HOOK","")}
-
-CTA:
-{data.get("CTA","")}
-"""
-
     st.download_button(
-        "📥 Download Skrip (.txt)",
-        data=full_script,
-        file_name=f"{product_name}_affiliate_idea.txt",
+        "📥 Download Script (.txt)",
+        data=st.session_state.result,
+        file_name=f"{product_name}_{st.session_state.language}.txt",
         mime="text/plain"
     )
 
 # ---------- HISTORY ----------
 if st.session_state.history:
     st.divider()
-    st.subheader("📊 History Idea (Session)")
+    st.subheader("📊 History (Session)")
 
     for i, item in enumerate(st.session_state.history[:5], 1):
-        with st.expander(f"{i}. {item['product']}"):
+        with st.expander(f"{i}. {item['product']} ({item['language']})"):
             st.text(item["result"])

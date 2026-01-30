@@ -15,47 +15,53 @@ HEADERS = {
     "X-Title": "AI Affiliate Idea Generator"
 }
 
-def generate_affiliate_ideas(product_name: str) -> str:
-    prompt = f"""
-Anda ialah pakar affiliate marketing TikTok.
+def generate_affiliate_ideas(product_name: str, language: str) -> str:
+    if language == "EN":
+        lang_instruction = "Use English language. Casual and natural tone."
+    else:
+        lang_instruction = "Gunakan Bahasa Melayu yang santai dan natural."
 
-Produk:
+    prompt = f"""
+You are an affiliate marketing expert for TikTok.
+
+Product:
 {product_name}
 
-Langkah:
-1. Kenal pasti BRAND berdasarkan nama produk.
-2. Senaraikan 3–5 CIRI UTAMA produk (berdasarkan pengetahuan umum, anggaran dibenarkan).
-3. Gunakan maklumat tersebut untuk bina kandungan affiliate.
+Steps:
+1. Identify the BRAND based on the product name.
+2. List 3–5 MAIN FEATURES of the product (based on general knowledge, estimation allowed).
+3. Use the information to generate affiliate content.
 
-Sila jawab dalam format berikut (WAJIB ikut):
+Respond in the following format (MUST follow exactly):
 
 BRAND:
-<nama brand>
+<brand name>
 
-CIRI:
-- <ciri 1>
-- <ciri 2>
-- <ciri 3>
+FEATURES:
+- <feature 1>
+- <feature 2>
+- <feature 3>
 
 PROBLEM:
-<problem utama pengguna>
+<main user problem>
 
 IDEA 1:
-<idea video pertama>
+<first video idea>
 
 IDEA 2:
-<idea video kedua>
+<second video idea>
 
 IDEA 3:
-<idea video ketiga>
+<third video idea>
 
 HOOK:
-<hook 3 saat pertama (ayat spoken)>
+<first 3-second spoken hook>
 
 CTA:
-<call to action ringkas>
+<short call to action>
 
-Gunakan Bahasa Melayu yang santai dan natural.
+Language rule:
+{lang_instruction}
 """
 
     payload = {
@@ -67,27 +73,21 @@ Gunakan Bahasa Melayu yang santai dan natural.
 
     for _ in range(3):
         try:
-            r = requests.post(
-                API_URL,
-                headers=HEADERS,
-                json=payload,
-                timeout=30
-            )
+            r = requests.post(API_URL, headers=HEADERS, json=payload, timeout=30)
 
             if r.status_code == 200:
                 content = r.json()["choices"][0]["message"]["content"]
                 if content and content.strip():
                     return content
-                return "⚠️ AI tidak memulangkan teks."
+                return "⚠️ AI returned empty text."
 
             elif r.status_code in (429, 500, 503):
                 time.sleep(2)
                 continue
-
             else:
-                return f"❌ Ralat API: {r.text}"
+                return f"❌ API Error: {r.text}"
 
         except requests.exceptions.RequestException as e:
-            return f"❌ Ralat rangkaian: {str(e)}"
+            return f"❌ Network error: {str(e)}"
 
-    return "⚠️ AI sedang sibuk. Sila cuba lagi."
+    return "⚠️ AI is busy. Please try again."
