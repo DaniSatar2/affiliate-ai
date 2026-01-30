@@ -1,22 +1,53 @@
 import streamlit as st
-from ai_engine import generate_affiliate_ideas
+from ai_engine import generate_affiliate_ideas, extract_product_name
 
-st.set_page_config(page_title="AI Affiliate Link Assistant")
+st.set_page_config(
+    page_title="AI Affiliate Link Assistant",
+    page_icon="🔗",
+    layout="centered"
+)
 
+# ---------- HEADER ----------
 st.title("🔗 AI Affiliate Link Assistant")
-st.write("Paste link produk Shopee / TikTok dan AI akan cadangkan idea video.")
+st.caption("Tukar link produk kepada idea video TikTok secara automatik")
 
-product_link = st.text_input("Link Produk")
+st.divider()
 
-if st.button("Generate Idea"):
-    if product_link:
-        with st.spinner("AI sedang menganalisis produk..."):
-            result = generate_affiliate_ideas(product_link)
+# ---------- INPUT SECTION ----------
+st.subheader("📦 Maklumat Produk")
 
-        if result.startswith("⚠️") or result.startswith("❌"):
+product_link = st.text_input(
+    "Link Produk (Shopee / TikTok)",
+    placeholder="https://shopee.com.my/..."
+)
+
+product_name = ""
+if product_link:
+    product_name = extract_product_name(product_link)
+
+product_name = st.text_input(
+    "Nama Produk (boleh edit)",
+    value=product_name,
+    placeholder="Contoh: Logitech M331 Silent Mouse"
+)
+
+st.divider()
+
+# ---------- ACTION ----------
+if st.button("🚀 Generate Idea", use_container_width=True):
+    if not product_link or not product_name:
+        st.warning("Sila masukkan link dan nama produk.")
+    else:
+        with st.spinner("AI sedang jana idea..."):
+            result = generate_affiliate_ideas(
+                product_link=product_link,
+                product_name=product_name
+            )
+
+        if result.startswith("⚠️"):
             st.warning(result)
         else:
             st.success("Idea berjaya dijana!")
-            st.write(result)
-    else:
-        st.warning("Sila masukkan link produk.")
+            st.session_state["result"] = result
+
+# ---------- OUTPUT ---------
