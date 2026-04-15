@@ -1,131 +1,201 @@
+import re
+
 import streamlit as st
+
 from ai_engine import generate_affiliate_ideas
 
-# ---------- PARSER ----------
-def parse_ai_output(text: str):
-    keys = ["BRAND", "FEATURES", "PROBLEM", "IDEA 1", "IDEA 2", "IDEA 3", "HOOK", "CTA"]
-    data = {}
-    current = None
+SECTION_KEYS = (
+    "BRAND",
+    "FEATURES",
+    "PROBLEM",
+    "IDEA 1",
+    "IDEA 2",
+    "IDEA 3",
+    "HOOK",
+    "CTA",
+)
 
-    for line in text.splitlines():
-        line = line.strip()
-        if line.endswith(":") and line[:-1] in keys:
-            current = line[:-1]
-            data[current] = ""
-        elif current and line:
-            data[current] += line + " "
+
+def parse_ai_output(text: str) -> dict[str, str]:
+    data = {key: "" for key in SECTION_KEYS}
+    current_key = None
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        match = re.match(
+            r"^(BRAND|FEATURES|PROBLEM|IDEA 1|IDEA 2|IDEA 3|HOOK|CTA)\s*:\s*(.*)$",
+            line,
+        )
+
+        if match:
+            current_key = match.group(1)
+            data[current_key] = match.group(2).strip()
+            continue
+
+        if current_key == "FEATURES":
+            data[current_key] = "\n".join(
+                part for part in (data[current_key], line) if part
+            )
+        elif current_key:
+            data[current_key] = " ".join(
+                part for part in (data[current_key], line) if part
+            )
 
     return data
 
 
-# ---------- PAGE CONFIG ----------
+def has_structured_content(data: dict[str, str]) -> bool:
+    required_sections = ("BRAND", "PROBLEM", "HOOK", "CTA")
+    return all(data.get(section, "").strip() for section in required_sections)
+
+
+def make_safe_filename(product_name: str, language: str) -> str:
+    safe_name = re.sub(r'[<>:"/\\|?*]+', "", product_name).strip()
+    safe_name = re.sub(r"\s+", "_", safe_name)
+
+    if not safe_name:
+        safe_name = "affiliate_idea"
+
+    return f"{safe_name}_{language}.txt"
+
+
 st.set_page_config(
     page_title="AI Affiliate Idea Generator",
-    page_icon="🚀",
-    layout="centered"
+    page_icon=":bulb:",
+    layout="centered",
 )
 
-# ---------- SESSION STATE ----------
 if "language" not in st.session_state:
     st.session_state.language = "BM"
 
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# ---------- HEADER ----------
-st.title("🚀 AI Affiliate Idea Generator")
-st.caption("Masukkan nama produk → pilih bahasa → AI jana idea TikTok")
+if "result" not in st.session_state:
+    st.session_state.result = None
+
+if "last_product" not in st.session_state:
+    st.session_state.last_product = ""
+
+if "last_language" not in st.session_state:
+    st.session_state.last_language = st.session_state.language
+
+st.title("AI Affiliate Idea Generator")
+st.caption("Masukkan nama produk, pilih bahasa, dan jana idea konten TikTok.")
 st.divider()
 
-# ---------- INPUT ----------
-st.subheader("📦 Maklumat Produk")
+st.subheader("Maklumat Produk")
 
 product_name = st.text_input(
     "Nama Produk",
-    placeholder="Contoh: Logitech M331 Silent Mouse"
+    placeholder="Contoh: Logitech M331 Silent Mouse",
 )
 
-# ---------- LANGUAGE SELECT (DI BAWAH INPUT) ----------
-st.markdown("### 🌐 Pilihan Bahasa")
+st.markdown("### Pilihan Bahasa")
 
 col_lang1, col_lang2 = st.columns(2)
 
 with col_lang1:
-    if st.button("🇲🇾 Bahasa Melayu", use_container_width=True):
+    if st.button("Bahasa Melayu", use_container_width=True):
         st.session_state.language = "BM"
 
 with col_lang2:
-    if st.button("🇬🇧 English", use_container_width=True):
+    if st.button("English", use_container_width=True):
         st.session_state.language = "EN"
 
-st.caption(
-    f"Bahasa dipilih: **{'Bahasa Melayu' if st.session_state.language == 'BM' else 'English'}**"
+selected_language_label = (
+    "Bahasa Melayu" if st.session_state.language == "BM" else "English"
 )
+st.caption(f"Bahasa dipilih: **{selected_language_label}**")
 
 st.divider()
 
-# ---------- ACTION ----------
-if st.button("🚀 Generate Idea", use_container_width=True):
-    if not product_name:
+if st.button("Generate Idea", use_container_width=True):
+    clean_product_name = product_name.strip()
+
+    if not clean_product_name:
         st.warning("Sila masukkan nama produk.")
     else:
         with st.spinner("AI sedang jana idea..."):
             result = generate_affiliate_ideas(
-                product_name=product_name,
-                language=st.session_state.language
+                product_name=clean_product_name,
+                language=st.session_state.language,
             )
 
+        st.session_state.last_product = clean_product_name
+        st.session_state.last_language = st.session_state.language
         st.session_state.result = result
-        st.session_state.history.insert(0, {
-            "product": product_name,
-            "language": st.session_state.language,
-            "result": result
-        })
 
-# ---------- OUTPUT ----------
-if "result" in st.session_state:
-    data = parse_ai_output(st.session_state.result)
+        if result["ok"]:
+            st.session_state.history.insert(
+                0,
+                {
+                    "product": clean_product_name,
+                    "language": st.session_state.language,
+                    "result": result["content"],
+                },
+            )
 
-    st.success("Idea berjaya dijana!")
-    st.subheader("💡 Cadangan Kandungan")
+if st.session_state.result:
+    result = st.session_state.result
 
-    st.markdown("### 🏷️ Brand")
-    st.info(data.get("BRAND", "—"))
+    if result["ok"]:
+        data = parse_ai_output(result["content"])
 
-    st.markdown("### ⚙️ Features / Ciri-ciri")
-    st.success(data.get("FEATURES", "—"))
+        st.success("Idea berjaya dijana.")
+        st.subheader("Cadangan Kandungan")
 
-    st.markdown("### 🧠 Problem Statement")
-    st.info(data.get("PROBLEM", "—"))
+        st.markdown("### Brand")
+        st.info(data.get("BRAND", "-") or "-")
 
-    st.markdown("### 🎬 Idea Video TikTok")
-    col1, col2, col3 = st.columns(3)
+        st.markdown("### Features / Ciri-ciri")
+        st.success(data.get("FEATURES", "-") or "-")
 
-    with col1:
-        st.success(data.get("IDEA 1", "—"))
-    with col2:
-        st.success(data.get("IDEA 2", "—"))
-    with col3:
-        st.success(data.get("IDEA 3", "—"))
+        st.markdown("### Problem Statement")
+        st.info(data.get("PROBLEM", "-") or "-")
 
-    st.markdown("### 🎣 Hook (3 saat pertama)")
-    st.warning(data.get("HOOK", "—"))
+        st.markdown("### Idea Video TikTok")
+        col1, col2, col3 = st.columns(3)
 
-    st.markdown("### 👉 Call To Action")
-    st.error(data.get("CTA", "—"))
+        with col1:
+            st.success(data.get("IDEA 1", "-") or "-")
+        with col2:
+            st.success(data.get("IDEA 2", "-") or "-")
+        with col3:
+            st.success(data.get("IDEA 3", "-") or "-")
 
-    # ---------- DOWNLOAD ----------
-    st.download_button(
-        "📥 Download Script (.txt)",
-        data=st.session_state.result,
-        file_name=f"{product_name}_{st.session_state.language}.txt",
-        mime="text/plain"
-    )
+        st.markdown("### Hook")
+        st.warning(data.get("HOOK", "-") or "-")
 
-# ---------- HISTORY ----------
+        st.markdown("### Call To Action")
+        st.error(data.get("CTA", "-") or "-")
+
+        if not has_structured_content(data):
+            st.warning(
+                "Output AI tidak ikut format sepenuhnya. Lihat output mentah di bawah."
+            )
+
+        with st.expander("Lihat output mentah"):
+            st.text(result["content"])
+
+        st.download_button(
+            "Download Script (.txt)",
+            data=result["content"],
+            file_name=make_safe_filename(
+                st.session_state.last_product,
+                st.session_state.last_language,
+            ),
+            mime="text/plain",
+        )
+    else:
+        st.error(result["error"])
+
 if st.session_state.history:
     st.divider()
-    st.subheader("📊 History Idea (Session)")
+    st.subheader("History Idea (Session)")
 
     for i, item in enumerate(st.session_state.history[:5], 1):
         with st.expander(f"{i}. {item['product']} ({item['language']})"):

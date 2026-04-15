@@ -1,21 +1,54 @@
 import os
 import time
+
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL_NAME = "openai/gpt-4o-mini"
 
-HEADERS = {
-    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-    "Content-Type": "application/json",
-    "HTTP-Referer": "http://localhost",
-    "X-Title": "AI Affiliate Idea Generator"
-}
 
-def generate_affiliate_ideas(product_name: str, language: str) -> str:
+def _build_headers(api_key: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost",
+        "X-Title": "AI Affiliate Idea Generator",
+    }
+
+
+def _extract_message_content(payload: dict) -> str:
+    choices = payload.get("choices") or []
+    if not choices:
+        return ""
+
+    message = choices[0].get("message") or {}
+    content = message.get("content", "")
+
+    if isinstance(content, str):
+        return content.strip()
+
+    if isinstance(content, list):
+        text_parts = []
+        for part in content:
+            if isinstance(part, dict) and part.get("type") == "text":
+                text_parts.append(part.get("text", ""))
+        return "\n".join(part.strip() for part in text_parts if part.strip())
+
+    return ""
+
+
+def generate_affiliate_ideas(product_name: str, language: str) -> dict[str, str | bool]:
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        return {
+            "ok": False,
+            "content": "",
+            "error": "OPENROUTER_API_KEY tidak dijumpai. Sila semak fail .env.",
+        }
+
     if language == "EN":
         lang_instruction = "Use English language. Casual and natural tone."
     else:
@@ -29,7 +62,7 @@ Product:
 
 Steps:
 1. Identify the BRAND based on the product name.
-2. List 3–5 MAIN FEATURES of the product (based on general knowledge, estimation allowed).
+2. List 3-5 MAIN FEATURES of the product (based on general knowledge, estimation allowed).
 3. Use the information to generate affiliate content.
 
 Respond in the following format (MUST follow exactly):
@@ -62,32 +95,64 @@ CTA:
 
 Language rule:
 {lang_instruction}
-"""
+""".strip()
 
     payload = {
-        "model": "openai/gpt-4o-mini",
+        "model": MODEL_NAME,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.7,
-        "max_tokens": 700
+        "max_tokens": 700,
     }
+
+    last_error = "AI sedang sibuk. Cuba lagi sebentar."
 
     for _ in range(3):
         try:
-            r = requests.post(API_URL, headers=HEADERS, json=payload, timeout=30)
+            response = requests.post(
+                API_URL,
+                headers=_build_headers(api_key),
+                json=payload,
+                timeout=30,
+            )
+        except requests.exceptions.RequestException as exc:
+            return {
+                "ok": False,
+                "content": "",
+                "error": f"Network error: {exc}",
+            }
 
-            if r.status_code == 200:
-                content = r.json()["choices"][0]["message"]["content"]
-                if content and content.strip():
-                    return content
-                return "⚠️ AI returned empty text."
+        if response.status_code == 200:
+            try:
+                body = response.json()
+            except ValueError:
+                return {
+                    "ok": False,
+                    "content": "",
+                    "error": "API response tidak sah dan tidak boleh dibaca.",
+                }
 
-            elif r.status_code in (429, 500, 503):
-                time.sleep(2)
-                continue
-            else:
-                return f"❌ API Error: {r.text}"
+            content = _extract_message_content(body)
+            if content:
+                return {"ok": True, "content": content, "error": ""}
 
-        except requests.exceptions.RequestException as e:
-            return f"❌ Network error: {str(e)}"
+            return {
+                "ok": False,
+                "content": "",
+                "error": "AI memulangkan output kosong.",
+            }
 
-    return "⚠️ AI is busy. Please try again."
+        if response.status_code in (429, 500, 503):
+            last_error = (
+                f"Temporary API error ({response.status_code}). Sila cuba lagi."
+            )
+            time.sleep(2)
+            continue
+
+        error_text = response.text.strip() or "Unknown API error."
+        return {
+            "ok": False,
+            "content": "",
+            "error": f"API Error {response.status_code}: {error_text}",
+        }
+
+    return {"ok": False, "content": "", "error": last_error}
