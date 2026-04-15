@@ -1,63 +1,27 @@
 # AI Affiliate Idea Generator
 
-App ini ialah projek Python + Streamlit untuk jana idea kandungan affiliate TikTok menggunakan AI.
+AI Affiliate Idea Generator ialah app `Streamlit` untuk menjana idea kandungan affiliate TikTok berdasarkan nama produk.
 
-User hanya perlu masukkan nama produk, pilih bahasa, kemudian app akan hasilkan:
+App ini menggunakan `OpenRouter` untuk menghasilkan output dalam format berstruktur seperti:
 
 - brand
-- ciri utama produk
+- features
 - problem statement
 - 3 idea video TikTok
 - hook
 - call to action
 
-## Keperluan
+## Tech Stack
 
-- Python 3.10+ disyorkan
-- `OPENROUTER_API_KEY`
-
-## Install
-
-Buka PowerShell dalam folder projek:
-
-```powershell
-cd C:\Users\User\OneDrive\Documents\affiliate-ai
-```
-
-Install dependency:
-
-```powershell
-python -m pip install -r requirements.txt
-```
-
-## Setup `.env`
-
-Cipta fail `.env` di root projek dan letak API key anda:
-
-```env
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-```
-
-## Cara Run
-
-Jalankan app dengan command berikut:
-
-```powershell
-python -m streamlit run app.py
-```
-
-Selepas itu buka browser di:
-
-```text
-http://localhost:8501
-```
-
-## Cara Guna
-
-1. Masukkan nama produk.
-2. Pilih bahasa sama ada Bahasa Melayu atau English.
-3. Klik `Generate Idea`.
-4. Muat turun hasil jika perlu.
+- Python
+- Streamlit
+- Requests
+- python-dotenv
+- OpenRouter API
+- GPT-4o mini
+- Dev Containers / GitHub Codespaces
+- VS Code Python Extension
+- VS Code Pylance
 
 ## Struktur Projek
 
@@ -66,40 +30,126 @@ affiliate-ai/
 |-- app.py
 |-- ai_engine.py
 |-- requirements.txt
+|-- README.md
 |-- .env
+|-- .devcontainer/
 ```
 
-## Fail Utama
+## Keperluan
 
-- `app.py` mengandungi UI Streamlit.
-- `ai_engine.py` mengandungi logik panggilan API OpenRouter.
-- `requirements.txt` senarai package Python yang diperlukan.
+- Python 3.10 atau lebih baru
+- API key OpenRouter
 
-## Troubleshooting
+## Setup
 
-Jika `python -m streamlit run app.py` tidak berjaya:
+Masuk ke folder projek:
 
-1. Pastikan Python sudah dipasang.
-2. Pastikan dependency sudah di-install:
+```powershell
+cd C:\Users\User\OneDrive\Documents\affiliate-ai
+```
+
+Buat virtual environment baru:
+
+```powershell
+python -m venv .venv
+```
+
+Aktifkan virtual environment:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
 
 ```powershell
 python -m pip install -r requirements.txt
 ```
 
-3. Pastikan `.env` wujud dan `OPENROUTER_API_KEY` betul.
-4. Jika port `8501` sedang digunakan, cuba:
+## Development Environment
+
+Repo ini juga ada konfigurasi `Dev Container` dalam `.devcontainer/devcontainer.json`.
+
+Jika anda buka projek ini dalam:
+
+- VS Code Dev Containers
+- GitHub Codespaces
+
+environment Python dan `Streamlit` boleh disediakan secara automatik berdasarkan konfigurasi tersebut.
+
+## Setup `.env`
+
+Cipta fail `.env` di root projek dan letakkan API key anda:
+
+```env
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+```
+
+## Cara Run
+
+Jalankan app dengan:
+
+```powershell
+python -m streamlit run app.py
+```
+
+Kemudian buka browser di:
+
+```text
+http://localhost:8501
+```
+
+Jika port `8501` sedang digunakan:
 
 ```powershell
 python -m streamlit run app.py --server.port 8502
 ```
 
-## Nota
+## Cara Guna
 
-Folder `venv` dalam repo ini mungkin belum disetup sepenuhnya. Jika mahu guna virtual environment, anda boleh buat semula:
+1. Masukkan nama produk.
+2. Pilih bahasa `Bahasa Melayu` atau `English`.
+3. Klik `Generate Idea`.
+4. Semak output yang dijana.
+5. Muat turun hasil sebagai fail `.txt` jika perlu.
+
+## Fail Utama
+
+- `app.py`
+  UI `Streamlit`, session state, parser output AI, history, dan download hasil.
+- `ai_engine.py`
+  Logik panggilan ke OpenRouter API serta error handling untuk request AI.
+- `requirements.txt`
+  Senarai dependency Python yang diperlukan oleh projek.
+
+## Troubleshooting
+
+Jika app tidak boleh start:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
+
+Jika keluar error `OPENROUTER_API_KEY tidak dijumpai`:
+
+- pastikan fail `.env` wujud
+- pastikan nama variable ialah `OPENROUTER_API_KEY`
+- pastikan API key yang dimasukkan betul
+
+Jika `venv` atau `.venv` nampak kosong:
+
+- itu biasanya bermaksud virtual environment belum dicipta dengan sempurna
+- buat semula dengan `python -m venv .venv`
+
+Jika `git push` ditolak kerana branch diverged:
+
+```powershell
+git pull --rebase origin main
+git push
+```
+
+## Nota
+
+- Jangan commit fail `.env` ke GitHub.
+- Jika output AI tidak ikut format sepenuhnya, app masih akan cuba parse dan paparkan output mentah untuk rujukan.
